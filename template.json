@@ -1,0 +1,139 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workflowName": {
+            "defaultValue": "deck-creator",
+            "type": "String"
+        },
+        "subscriptionId": {
+            "defaultValue": "11111111-2222-3333-4444-555555555555",
+            "type": "String"
+        },
+        "region": {
+            "defaultValue": "centralus",
+            "type": "String"
+        },
+        "mailTo": {
+            "defaultValue": "sample@email.com",
+            "type": "String"
+        }
+    },
+    "variables": {
+        "connections_office365_externalid": "[concat('/subscriptions/',parameters('subscriptionId'),'/resourceGroups/logic-app/providers/Microsoft.Web/connections/office365')]",
+        "connections_onedriveforbusiness_externalid": "[concat('/subscriptions/',parameters('subscriptionId'),'/resourceGroups/logic-app/providers/Microsoft.Web/connections/onedriveforbusiness')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('workflowName')]",
+            "location": "[parameters('region')]",
+            "properties": {
+                "state": "Disabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "Recurrence": {
+                            "recurrence": {
+                                "frequency": "Month",
+                                "interval": 1,
+                                "startTime": "2019-10-20T12:00:00Z"
+                            },
+                            "type": "Recurrence"
+                        }
+                    },
+                    "actions": {
+                        "Copy_file_using_path": {
+                            "runAfter": {},
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['onedriveforbusiness']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/datasets/default/CopyFileByPath",
+                                "queries": {
+                                    "destination": "@{concat('/First Fridays/', addDays(utcNow(), 30, 'yyyy-MM'), ' Raleigh First Friday.pptx')}",
+                                    "overwrite": true,
+                                    "source": "@{concat('/First Fridays/', formatDateTime(utcNow(), 'yyyy-MM'), ' Raleigh First Friday.pptx')}"
+                                }
+                            }
+                        },
+                        "Create_New_Deck": {
+                            "runAfter": {
+                                "Copy_file_using_path": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['onedriveforbusiness']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/datasets/default/CreateShareLinkByPath",
+                                "queries": {
+                                    "path": "@{concat('/First Fridays/', addDays(utcNow(), 30, 'yyyy-MM'), ' Raleigh First Friday.pptx')}",
+                                    "scope": "Organization",
+                                    "type": "Edit"
+                                }
+                            }
+                        },
+                        "Send_an_email_(V2)": {
+                            "runAfter": {
+                                "Create_New_Deck": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "Body": "<p>Hello everyone,<br>\n<br>\nHere's a link to the upcoming Raleigh First Friday deck: <a href=\"@{body('Create_New_Deck')['WebUrl']}\">link</a><br>\n<br>\nThanks!<br>\n<br>\nRegards, John Smith<br>\n</p>",
+                                    "Importance": "High",
+                                    "Subject": "@{concat(addDays(utcNow(), 30, 'yyyy-MM'), ' Raleigh First Friday deck')}",
+                                    "To": "[parameters('mailTo')]"
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['office365']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/v2/Mail"
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "office365": {
+                                "connectionId": "[variables('connections_office365_externalid')]",
+                                "connectionName": "office365",
+                                "id": "[concat('/subscriptions/',parameters('subscriptionId'),'/providers/Microsoft.Web/locations/',parameters('region'),'/managedApis/office365')]"
+                            },
+                            "onedriveforbusiness": {
+                                "connectionId": "[variables('connections_onedriveforbusiness_externalid')]",
+                                "connectionName": "onedriveforbusiness",
+                                "id": "[concat('/subscriptions/',parameters('subscriptionId'),'/providers/Microsoft.Web/locations/',parameters('region'),'/managedApis/onedriveforbusiness')]"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
