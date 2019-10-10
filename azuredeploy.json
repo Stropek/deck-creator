@@ -6,10 +6,6 @@
             "defaultValue": "deck-creator",
             "type": "String"
         },
-        "subscriptionId": {
-            "defaultValue": "11111111-2222-3333-4444-555555555555",
-            "type": "String"
-        },
         "region": {
             "defaultValue": "centralus",
             "type": "String"
@@ -20,8 +16,8 @@
         }
     },
     "variables": {
-        "connections_office365_externalid": "[concat('/subscriptions/',parameters('subscriptionId'),'/resourceGroups/logic-app/providers/Microsoft.Web/connections/office365')]",
-        "connections_onedriveforbusiness_externalid": "[concat('/subscriptions/',parameters('subscriptionId'),'/resourceGroups/logic-app/providers/Microsoft.Web/connections/onedriveforbusiness')]"
+        "connections_office365_externalid": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/logic-app/providers/Microsoft.Web/connections/office365')]",
+        "connections_onedriveforbusiness_externalid": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/logic-app/providers/Microsoft.Web/connections/onedriveforbusiness')]"
     },
     "resources": [
         {
@@ -123,12 +119,12 @@
                             "office365": {
                                 "connectionId": "[variables('connections_office365_externalid')]",
                                 "connectionName": "office365",
-                                "id": "[concat('/subscriptions/',parameters('subscriptionId'),'/providers/Microsoft.Web/locations/',parameters('region'),'/managedApis/office365')]"
+                                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('region'),'/managedApis/office365')]"
                             },
                             "onedriveforbusiness": {
                                 "connectionId": "[variables('connections_onedriveforbusiness_externalid')]",
                                 "connectionName": "onedriveforbusiness",
-                                "id": "[concat('/subscriptions/',parameters('subscriptionId'),'/providers/Microsoft.Web/locations/',parameters('region'),'/managedApis/onedriveforbusiness')]"
+                                "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('region'),'/managedApis/onedriveforbusiness')]"
                             }
                         }
                     }
