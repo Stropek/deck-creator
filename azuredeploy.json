@@ -10,6 +10,10 @@
             "defaultValue": "centralus",
             "type": "String"
         },
+        "azureAccountEmail": {
+            "defaultValue": "sample@email.com",
+            "type": "String"
+        },
         "mailTo": {
             "defaultValue": "sample@email.com",
             "type": "String"
@@ -20,6 +24,32 @@
         "connections_onedriveforbusiness_externalid": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/logic-app/providers/Microsoft.Web/connections/onedriveforbusiness')]"
     },
     "resources": [
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "office365",
+            "location": "[parameters('region')]",
+            "properties": {
+                "displayName": "[parameters('azureAccountEmail')]",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('region'),'/managedApis/office365')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "onedriveforbusiness",
+            "location": "[parameters('region')]",
+            "properties": {
+                "displayName": "[parameters('azureAccountEmail')]",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/',subscription().subscriptionId,'/providers/Microsoft.Web/locations/',parameters('region'),'/managedApis/onedriveforbusiness')]"
+                }
+            }
+        },
         {
             "type": "Microsoft.Logic/workflows",
             "apiVersion": "2017-07-01",
